@@ -15,13 +15,21 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Add new todo
+// Add new todo
 function addTodo() {
     const input = document.getElementById('todoInput');
     const deadlineInput = document.getElementById('deadlineInput');
     const text = input.value.trim();
-    const deadline = deadlineInput.value;
+    let deadline = deadlineInput.value;
     
-    if (text && deadline) {
+    if (text) {
+        // If no deadline is specified, set it to 23:59 of today
+        if (!deadline) {
+            const today = new Date();
+            today.setHours(23, 59, 0, 0); // Set time to 23:59
+            deadline = today.toISOString().slice(0, 16);
+        }
+        
         todos.push({
             text: text,
             completed: false,
@@ -34,9 +42,10 @@ function addTodo() {
         saveTodos();
         renderTodos();
     } else {
-        alert('Please enter both task and deadline');
+        alert('Please enter a task');
     }
 }
+
 
 // Allow adding todo with Enter key
 document.getElementById('todoInput').addEventListener('keypress', (e) => {
