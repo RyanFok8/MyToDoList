@@ -1,51 +1,91 @@
 let todos = [];
+let labels = [];
 
-// Load todos from localStorage when page loads
+// Load todos and labels from localStorage when page loads
 document.addEventListener('DOMContentLoaded', () => {
     const savedTodos = localStorage.getItem('todos');
+    const savedLabels = localStorage.getItem('labels');
     if (savedTodos) {
         todos = JSON.parse(savedTodos);
         renderTodos();
+    }
+    if (savedLabels) {
+        labels = JSON.parse(savedLabels);
+        renderLabels();
     }
     
     // Set min datetime to now for the deadline input
     const now = new Date();
     const nowFormatted = now.toISOString().slice(0, 16);
     document.getElementById('deadlineInput').min = nowFormatted;
+
+    // Initialize the calendar
+    $('#calendar').fullCalendar({
+        header: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'month,agendaWeek,agendaDay'
+        },
+        events: todos.map(todo => ({
+            title: todo.text,
+            start: todo.deadline,
+            allDay: false
+        }))
+    });
 });
 
-// Add new todo
 // Add new todo
 function addTodo() {
     const input = document.getElementById('todoInput');
     const deadlineInput = document.getElementById('deadlineInput');
+    const newLabelInput = document.getElementById('newLabelInput');
+    const labelSelect = document.getElementById('labelSelect');
     const text = input.value.trim();
     let deadline = deadlineInput.value;
-    
+    let label = newLabelInput.value.trim() || labelSelect.value;
+
     if (text) {
-        // If no deadline is specified, set it to 23:59 of today
+        // If no deadline is specified, set it to 23:59 of today (in local time)
         if (!deadline) {
             const today = new Date();
-            today.setHours(23, 59, 0, 0); // Set time to 23:59
-            deadline = today.toISOString().slice(0, 16);
+            today.setHours(23, 59, 0, 0); // Set time to 23:59 in local time
+            deadline = today.toISOString().slice(0, 19); // Get ISO format, but without milliseconds
         }
-        
-        todos.push({
+
+        const newTodo = {
             text: text,
             completed: false,
             id: Date.now(),
             createdAt: new Date().toISOString(),
-            deadline: new Date(deadline).toISOString()
-        });
+            deadline: new Date(deadline).toISOString(), // Save deadline in ISO format
+            label: label
+        };
+
+        todos.push(newTodo);
+
+        if (newLabelInput.value.trim() && !labels.includes(newLabelInput.value.trim())) {
+            labels.push(newLabelInput.value.trim());
+            saveLabels();
+            renderLabels();
+        }
+
         input.value = '';
         deadlineInput.value = '';
+        newLabelInput.value = '';
+        labelSelect.value = '';
         saveTodos();
         renderTodos();
+
+        // Add the new todo to the calendar
+        $('#calendar').fullCalendar('renderEvent', {
+            title: newTodo.text,
+            start: newTodo.deadline,
+            allDay: false
+        });
     } else {
         alert('Please enter a task');
     }
 }
-
 
 // Allow adding todo with Enter key
 document.getElementById('todoInput').addEventListener('keypress', (e) => {
@@ -59,6 +99,13 @@ function deleteTodo(id) {
     todos = todos.filter(todo => todo.id !== id);
     saveTodos();
     renderTodos();
+    // Re-render the calendar events
+    $('#calendar').fullCalendar('removeEvents');
+    $('#calendar').fullCalendar('addEventSource', todos.map(todo => ({
+        title: todo.text,
+        start: todo.deadline,
+        allDay: false
+    })));
 }
 
 // Toggle todo completion
@@ -71,6 +118,13 @@ function toggleTodo(id) {
     });
     saveTodos();
     renderTodos();
+    // Re-render the calendar events
+    $('#calendar').fullCalendar('removeEvents');
+    $('#calendar').fullCalendar('addEventSource', todos.map(todo => ({
+        title: todo.text,
+        start: todo.deadline,
+        allDay: false
+    })));
 }
 
 // Edit todo
@@ -87,12 +141,24 @@ function editTodo(id) {
         });
         saveTodos();
         renderTodos();
+        // Re-render the calendar events
+        $('#calendar').fullCalendar('removeEvents');
+        $('#calendar').fullCalendar('addEventSource', todos.map(todo => ({
+            title: todo.text,
+            start: todo.deadline,
+            allDay: false
+        })));
     }
 }
 
 // Save todos to localStorage
 function saveTodos() {
     localStorage.setItem('todos', JSON.stringify(todos));
+}
+
+// Save labels to localStorage
+function saveLabels() {
+    localStorage.setItem('labels', JSON.stringify(labels));
 }
 
 // Filter todos
@@ -122,6 +188,18 @@ function formatDate(dateString) {
         minute: '2-digit' 
     };
     return new Date(dateString).toLocaleString(undefined, options);
+}
+
+// Render labels in the select dropdown
+function renderLabels() {
+    const labelSelect = document.getElementById('labelSelect');
+    labelSelect.innerHTML = '<option value="">Select label</option>';
+    labels.forEach(label => {
+        const option = document.createElement('option');
+        option.value = label;
+        option.textContent = label;
+        labelSelect.appendChild(option);
+    });
 }
 
 // Render todos
@@ -173,6 +251,11 @@ function renderTodos() {
         if (isOverdue) {
             deadlineSpan.classList.add('overdue');
         }
+
+        // Label display
+        const labelSpan = document.createElement('div');
+        labelSpan.className = 'todo-label';
+        labelSpan.textContent = `Label: ${todo.label}`;
         
         // Delete button
         const deleteBtn = document.createElement('button');
@@ -183,6 +266,7 @@ function renderTodos() {
         // Append elements
         contentDiv.appendChild(textSpan);
         contentDiv.appendChild(deadlineSpan);
+        contentDiv.appendChild(labelSpan);
         li.appendChild(checkbox);
         li.appendChild(contentDiv);
         li.appendChild(deleteBtn);

@@ -3,24 +3,35 @@
 <head>
     <title>Priority Todo List</title>
     <link rel="stylesheet" href="styles.css">
+    <link href='https://fullcalendar.io/releases/fullcalendar/3.10.2/fullcalendar.min.css' rel='stylesheet' />
+    <script src='https://fullcalendar.io/releases/fullcalendar/3.10.2/lib/jquery.min.js'></script>
+    <script src='https://fullcalendar.io/releases/fullcalendar/3.10.2/lib/moment.min.js'></script>
+    <script src='https://fullcalendar.io/releases/fullcalendar/3.10.2/fullcalendar.min.js'></script>
 </head>
 <body>
     <div class="container">
         <h1>Priority Todo List</h1>
-        <div class="input-section">
-            <input type="text" id="todoInput" placeholder="Add a new task...">
-            <input type="datetime-local" id="deadlineInput">
-            <button onclick="addTodo()">Add</button>
+        <div class="main-content">
+            <div class="input-section">
+                <input type="text" id="todoInput" placeholder="Add a new task...">
+                <input type="datetime-local" id="deadlineInput">
+                <input type="text" id="newLabelInput" placeholder="Add new label...">
+                <select id="labelSelect">
+                    <option value="">Select label</option>
+                </select>
+                <button onclick="addTodo()">Add</button>
+            </div>
+            <div class="filter-section">
+                <select id="filterStatus" onchange="filterTodos()">
+                    <option value="all">All Tasks</option>
+                    <option value="pending">Pending</option>
+                    <option value="completed">Completed</option>
+                    <option value="overdue">Overdue</option>
+                </select>
+            </div>
+            <ul id="todoList"></ul>
         </div>
-        <div class="filter-section">
-            <select id="filterStatus" onchange="filterTodos()">
-                <option value="all">All Tasks</option>
-                <option value="pending">Pending</option>
-                <option value="completed">Completed</option>
-                <option value="overdue">Overdue</option>
-            </select>
-        </div>
-        <ul id="todoList"></ul>
+        <div id="calendar"></div>
     </div>
     <script src="script.js"></script>
 </body>
